@@ -197,7 +197,7 @@ func (d Dialector) DataTypeOf(field *schema.Field) string {
 		}
 
 	case schema.Time:
-		sqlType = "TIMESTAMP WITH TIME ZONE"
+		sqlType = "DATE" //sqlType = "TIMESTAMP WITH TIME ZONE"
 		if field.NotNull || field.PrimaryKey {
 			sqlType += " NOT NULL"
 		}
