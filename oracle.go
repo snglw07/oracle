@@ -164,10 +164,7 @@ func (d Dialector) DataTypeOf(field *schema.Field) string {
 	case schema.Int, schema.Uint:
 		size := field.Precision
 		if size == 0 {
-			size = field.Size
-		}
-		if size == 0 {
-			size = 10
+			size = 20
 		}
 
 		sqlType = fmt.Sprintf("NUMBER(%d,0)", size)
@@ -176,13 +173,6 @@ func (d Dialector) DataTypeOf(field *schema.Field) string {
 		}
 	case schema.Float:
 		size := field.Precision
-		if size == 0 {
-			size = field.Size
-		}
-		if size == 0 {
-			size = 20
-		}
-
 		scale := field.Scale
 
 		if size > 0 && scale > 0 {
