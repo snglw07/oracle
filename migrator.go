@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/migrator"
+	"gorm.io/gorm/schema"
 )
 
 type Migrator struct {
@@ -25,7 +26,24 @@ func (m Migrator) CreateTable(values ...interface{}) error {
 		m.TryQuotifyReservedWords(value)
 		m.TryRemoveOnUpdate(value)
 	}
-	return m.Migrator.CreateTable(values...)
+	err := m.Migrator.CreateTable(values...)
+
+	for _, value := range m.ReorderModels(values, false) {
+		if err := m.RunWithValue(value, func(stmt *gorm.Statement) (errr error) {
+			for _, dbName := range stmt.Schema.DBNames {
+				field := stmt.Schema.FieldsByDBName[dbName]
+				if !field.IgnoreMigration {
+					defer m.AddColumnComment(field)
+				}
+			}
+
+			return errr
+		}); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 func (m Migrator) DropTable(values ...interface{}) error {
@@ -90,13 +108,33 @@ func (m Migrator) RenameTable(oldName, newName interface{}) (err error) {
 func (m Migrator) AddColumn(value interface{}, field string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
 		if field := stmt.Schema.LookUpField(field); field != nil {
-			return m.DB.Exec(
+			err := m.DB.Exec(
 				"ALTER TABLE ? ADD ? ?",
 				clause.Table{Name: stmt.Table}, clause.Column{Name: field.DBName}, m.DB.Migrator().FullDataTypeOf(field),
 			).Error
+
+			if err != nil {
+				err = m.AddColumnComment(field)
+			}
+
+			return err
 		}
 		return fmt.Errorf("failed to look up field with name: %s", field)
 	})
+}
+
+//add column comment
+func (m Migrator) AddColumnComment(field *schema.Field) error {
+
+	if field.Comment == "" || field.Comment == "''" {
+		return nil
+	}
+
+	commentSql := fmt.Sprintf("COMMENT ON COLUMN %s.%s is '%s' ", field.Schema.Table, field.DBName, strings.ReplaceAll(field.Comment, "'", ""))
+
+	err := m.DB.Exec(commentSql).Error
+
+	return err
 }
 
 func (m Migrator) DropColumn(value interface{}, name string) error {
