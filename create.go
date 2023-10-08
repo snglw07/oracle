@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm/clause"
 	gormSchema "gorm.io/gorm/schema"
 
+	carbon "github.com/golang-module/carbon/v2"
 	"github.com/snglw07/oracle/clauses"
 )
 
@@ -103,6 +104,20 @@ func Create(db *gorm.DB) {
 							val = 1
 						} else {
 							val = 0
+						}
+					// case *carbon.DateTime:
+					// 	{
+					// 		if v.IsInvalid() {
+					// 			val = nil
+					// 		} else {
+					// 			val = v.ToStdTime()
+					// 		}
+					// 	}
+					case carbon.DateTime:
+						if v.IsInvalid() {
+							val = carbon.Now().ToStdTime()
+						} else {
+							val = v.ToStdTime()
 						}
 					}
 

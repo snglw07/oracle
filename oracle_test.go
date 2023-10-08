@@ -3,8 +3,8 @@ package oracle_test
 import (
 	"fmt"
 	"testing"
-	"time"
 
+	carbon "github.com/golang-module/carbon/v2"
 	go_ora "github.com/sijms/go-ora/v2"
 	"github.com/snglw07/oracle"
 	"gorm.io/gorm"
@@ -13,8 +13,8 @@ import (
 
 //@Description 支付订单
 type AaYlPayOrder struct {
-	CreatedAt time.Time `gorm:"<-:create;comment:'创建时间'" json:"createdAt" swaggerignore:"true"` //创建时间
-	UpdatedAt time.Time `gorm:"comment:'更新时间'" json:"updatedAt" swaggerignore:"true"`           //更新时间
+	CreatedAt carbon.DateTime  `gorm:"<-:create;comment:'创建时间'" json:"createdAt" swaggerignore:"true"` //创建时间
+	UpdatedAt *carbon.DateTime `gorm:"comment:'更新时间'" json:"updatedAt" swaggerignore:"true"`           //更新时间
 
 	CreatedIp string `gorm:"<-:create;size:40;comment:'订单创建IP';" json:"createdIp" form:"createdIp" swaggerignore:"true"` //订单创建IP
 
@@ -41,12 +41,15 @@ type AaYlPayOrder struct {
 	RefundTag int `gorm:"precision:1;default:0;comment:'退费标志';" json:"refundTag" form:"refundTag" swaggerignore:"true"` //退费标志
 
 	Openid string `gorm:"size:32;index:idx_pay_order_openid11;comment:'微信openid';" json:"openid" form:"openid"` //微信openid
+
+	Dt carbon.DateTime `json:"dt"` //创建时间
+
 }
 
 func Test0(t *testing.T) {
 	//cnnStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, "c##wbgw", "bltsoft", "192.168.8.188", 1521, "ORCL")
 
-	cnnStr := go_ora.BuildUrl("192.168.8.188", 1521, "ORCL", "c##wbgw", "bltsoft", nil)
+	cnnStr := go_ora.BuildUrl("127.0.0.1", 1521, "ORCL", "c##wbgw", "bltsoft", nil)
 
 	dialector := oracle.Open(cnnStr)
 
@@ -66,4 +69,10 @@ func Test0(t *testing.T) {
 	err = ormdb.AutoMigrate(&AaYlPayOrder{})
 
 	fmt.Println(err)
+
+	var entity = AaYlPayOrder{Id: "113", BizData: "clob内容112"}
+
+	tx := ormdb.Save(&entity)
+
+	fmt.Println(tx)
 }
