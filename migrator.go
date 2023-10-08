@@ -1,6 +1,7 @@
 package oracle
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -65,11 +66,45 @@ func (m Migrator) DropTable(values ...interface{}) error {
 func (m Migrator) HasTable(value interface{}) bool {
 	var count int64
 
-	m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		return m.DB.Raw("SELECT COUNT(*) FROM USER_TABLES WHERE TABLE_NAME = ?", stmt.Table).Row().Scan(&count)
+	_ = m.RunWithValue(value, func(stmt *gorm.Statement) error {
+		if stmt.Schema != nil && strings.Contains(stmt.Schema.Table, ".") {
+			ownertable := strings.Split(stmt.Schema.Table, ".")
+			return m.DB.Raw("SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER = ?  and  TABLE_NAME = ?", ownertable[0], ownertable[1]).Row().Scan(&count)
+		} else {
+			return m.DB.Raw("SELECT COUNT(*) FROM USER_TABLES WHERE TABLE_NAME = ?", stmt.Table).Row().Scan(&count)
+		}
 	})
 
 	return count > 0
+}
+
+// ColumnTypes return columnTypes []gorm.ColumnType and execErr error
+func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
+	columnTypes := make([]gorm.ColumnType, 0)
+	execErr := m.RunWithValue(value, func(stmt *gorm.Statement) (err error) {
+		rows, err := m.DB.Session(&gorm.Session{}).Table(stmt.Schema.Table).Where("ROWNUM = 1").Rows()
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			err = rows.Close()
+		}()
+
+		var rawColumnTypes []*sql.ColumnType
+		rawColumnTypes, err = rows.ColumnTypes()
+		if err != nil {
+			return err
+		}
+
+		for _, c := range rawColumnTypes {
+			columnTypes = append(columnTypes, migrator.ColumnType{SQLColumnType: c})
+		}
+
+		return
+	})
+
+	return columnTypes, execErr
 }
 
 func (m Migrator) RenameTable(oldName, newName interface{}) (err error) {

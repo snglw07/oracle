@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	go_ora "github.com/sijms/go-ora/v2"
 	"github.com/snglw07/oracle"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -43,7 +44,9 @@ type AaYlPayOrder struct {
 }
 
 func Test0(t *testing.T) {
-	cnnStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, "c##wbgw", "bltsoft", "192.168.8.188", 1521, "ORCL")
+	//cnnStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, "c##wbgw", "bltsoft", "192.168.8.188", 1521, "ORCL")
+
+	cnnStr := go_ora.BuildUrl("192.168.8.188", 1521, "ORCL", "c##wbgw", "bltsoft", nil)
 
 	dialector := oracle.Open(cnnStr)
 
