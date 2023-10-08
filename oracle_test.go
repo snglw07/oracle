@@ -40,7 +40,7 @@ type AaYlPayOrder struct {
 
 	RefundTag int `gorm:"precision:1;default:0;comment:'退费标志';" json:"refundTag" form:"refundTag" swaggerignore:"true"` //退费标志
 
-	Openid string `gorm:"size:32;index:idx_pay_order_openid;comment:'微信openid';" json:"openid" form:"openid"` //微信openid
+	Openid string `gorm:"size:32;index:idx_pay_order_openid11;comment:'微信openid';" json:"openid" form:"openid"` //微信openid
 }
 
 func Test0(t *testing.T) {

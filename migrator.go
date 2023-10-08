@@ -15,6 +15,19 @@ type Migrator struct {
 	migrator.Migrator
 }
 
+// GetTypeAliases return database type aliases
+func (m Migrator) GetTypeAliases(databaseTypeName string) []string {
+	//dbName := strings.ToLower(databaseTypeName)
+	//已经转换为小写了
+
+	if strings.Contains(databaseTypeName, "char") {
+		return []string{"varchar2", "nvarchar2", "nchar", "char"}
+	} else if databaseTypeName == "ocicloblocator" {
+		return []string{"clob"}
+	}
+	return nil
+}
+
 func (m Migrator) CurrentDatabase() (name string) {
 	m.DB.Raw(
 		fmt.Sprintf(`SELECT ORA_DATABASE_NAME as "Current Database" FROM %s`, m.Dialector.(Dialector).DummyTableName()),
